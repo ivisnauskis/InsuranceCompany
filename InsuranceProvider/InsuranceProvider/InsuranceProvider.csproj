@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Exceptions\NameNotUniqueException.cs" />
+    <Compile Include="Exceptions\NoRisksSelectedException.cs" />
     <Compile Include="Exceptions\PolicyNotFoundException.cs" />
     <Compile Include="Exceptions\TimeNotValidException.cs" />
     <Compile Include="IInsuranceCompany.cs" />

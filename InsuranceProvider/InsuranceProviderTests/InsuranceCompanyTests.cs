@@ -23,9 +23,16 @@ namespace InsuranceProviderTests
         }
 
         [Fact]
-        public void AvailableRisks()
+        public void AvailableRisks_Get()
         {
             _company.AvailableRisks.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void AvailableRisks_Set()
+        {
+            _company.AvailableRisks = new List<Risk>() { new Risk("risk", 1M)};
+            _company.AvailableRisks.Should().NotBeEmpty();
         }
 
         [Fact]
@@ -33,7 +40,7 @@ namespace InsuranceProviderTests
         {
             var now = DateTime.Now;
             var date = new DateTime(now.Year + 1, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-            var policy = _company.SellPolicy("car", date, 3, new List<Risk>());
+            var policy = _company.SellPolicy("car", date, 3, GetRisks());
 
             policy.Should().NotBe(null);
             policy.NameOfInsuredObject.Should().Be("car");
@@ -47,8 +54,8 @@ namespace InsuranceProviderTests
             var from1 = new DateTime(2025, 3, 1, 12, 0, 0);
             var from2 = new DateTime(2025, 5, 2, 12, 0, 0);
 
-            _company.SellPolicy("1", from1, 2, new List<Risk>());
-            _company.SellPolicy("1", from2, 2, new List<Risk>());
+            _company.SellPolicy("1", from1, 2, GetRisks());
+            _company.SellPolicy("1", from2, 2, GetRisks());
 
             IPolicy policy2 = _company.GetPolicy("1", from1);
             IPolicy policy1 = _company.GetPolicy("1", from2);
@@ -64,7 +71,7 @@ namespace InsuranceProviderTests
         {
             var from = DateTime.Parse(dateFrom);
             _company.Invoking(ic => ic.SellPolicy("obj1", from,
-                    validMonths, new List<Risk>()))
+                    validMonths, GetRisks()))
                 .ShouldThrow<NameNotUniqueException>();
         }
 
@@ -72,8 +79,17 @@ namespace InsuranceProviderTests
         public void SellPolicy_Retroactive_ShouldThrowTimeNotValidException()
         {
             _company.Invoking(ic => ic.SellPolicy("car", DateTime.Now.Subtract(TimeSpan.FromDays(1)),
-                    3, new List<Risk>()))
+                    3, GetRisks()))
                 .ShouldThrow<TimeNotValidException>();
+        }
+
+        [Fact]
+        public void SellPolicy_NoRisksSelected_ShouldThrowNoRisksSelectedException()
+        {
+            var from = new DateTime(2025, 3, 1, 12, 0, 0);
+
+            _company.Invoking(ic => ic.SellPolicy("obj1", from, 2, new List<Risk>()))
+                .ShouldThrow<NoRisksSelectedException>();
         }
 
         [Fact]
@@ -112,8 +128,6 @@ namespace InsuranceProviderTests
                 .ShouldThrow<PolicyNotFoundException>();
         }
 
-
-
         private List<IPolicy> GetPolicies()
         {
             var from = new DateTime(2020, 2, 1, 12, 0, 0);
@@ -126,6 +140,11 @@ namespace InsuranceProviderTests
                 new Policy("obj2", from.AddYears(5),
                     till, 1M, new List<Risk>())
             };
+        }
+
+        private List<Risk> GetRisks()
+        {
+            return new List<Risk>() { new Risk("risk", 1M)};
         }
     }
 }

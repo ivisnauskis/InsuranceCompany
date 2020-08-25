@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Policy;
 using InsuranceProvider.Exceptions;
 
 namespace InsuranceProvider
 {
+    
     public class InsuranceCompany : IInsuranceCompany
     {
         private readonly List<IPolicy> _policies = new List<IPolicy>();
@@ -25,15 +25,21 @@ namespace InsuranceProvider
 
         public IList<Risk> AvailableRisks { get; set; }
 
+
+        //TODO Throw Exception if selectedRisks is empty
         public IPolicy SellPolicy(string nameOfInsuredObject, DateTime validFrom, short validMonths,
             IList<Risk> selectedRisks)
         {
             if (IsExistingName(validFrom, validMonths, nameOfInsuredObject))
                 throw new NameNotUniqueException($"Insured object '{nameOfInsuredObject}' is not unique.");
 
+            if (selectedRisks == null || selectedRisks.Count == 0)
+                throw new NoRisksSelectedException("Selected risks cannot be null or empty");
+
             if (validFrom < DateTime.Now)
                 throw new TimeNotValidException("Policy starting time cannot be retroactive.");
 
+            
             var policy = new Policy(nameOfInsuredObject, validFrom, validFrom.AddMonths(validMonths), 1M, selectedRisks);
             _policies.Add(policy);
             return policy;
@@ -54,8 +60,7 @@ namespace InsuranceProvider
         {
             IPolicy policy = _policies.Find(p => p.NameOfInsuredObject == nameOfInsuredObject && p.ValidFrom == effectiveDate);
 
-            if (policy == null)
-                throw new PolicyNotFoundException($"Policy not found.");
+            if (policy == null) throw new PolicyNotFoundException("Policy not found.");
 
             return policy;
         }
