@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Policy;
 using InsuranceProvider.Exceptions;
 
 namespace InsuranceProvider
@@ -33,20 +34,30 @@ namespace InsuranceProvider
             if (validFrom < DateTime.Now)
                 throw new TimeNotValidException("Policy starting time cannot be retroactive.");
 
-            var policy = new Policy(nameOfInsuredObject, validFrom, validFrom.AddMonths(validMonths), 1M,
-                selectedRisks);
+            var policy = new Policy(nameOfInsuredObject, validFrom, validFrom.AddMonths(validMonths), 1M, selectedRisks);
             _policies.Add(policy);
             return policy;
         }
 
         public void AddRisk(string nameOfInsuredObject, Risk risk, DateTime validFrom)
         {
-            throw new NotImplementedException();
+            if (validFrom < DateTime.Now)
+                throw new TimeNotValidException("Risk starting time cannot be retroactive.");
+
+            var policy = _policies.Find(p =>
+                p.ValidFrom <= validFrom && validFrom >= p.ValidTill && p.NameOfInsuredObject == nameOfInsuredObject);
+
+            policy.InsuredRisks.Add(risk);
         }
 
         public IPolicy GetPolicy(string nameOfInsuredObject, DateTime effectiveDate)
         {
-            throw new NotImplementedException();
+            IPolicy policy = _policies.Find(p => p.NameOfInsuredObject == nameOfInsuredObject && p.ValidFrom == effectiveDate);
+
+            if (policy == null)
+                throw new PolicyNotFoundException($"Policy not found.");
+
+            return policy;
         }
 
         private bool IsExistingName(DateTime validFrom, short validMonths, string nameOfInsuredObject)

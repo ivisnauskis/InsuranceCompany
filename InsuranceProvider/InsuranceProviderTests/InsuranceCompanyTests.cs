@@ -37,7 +37,23 @@ namespace InsuranceProviderTests
 
             policy.Should().NotBe(null);
             policy.NameOfInsuredObject.Should().Be("car");
+
             policy.ValidTill.Should().Be(date.AddMonths(3));
+        }
+
+        [Fact]
+        public void SellPolicy_SameNameDifferentDate_ShouldReturnPolicy()
+        {
+            var from1 = new DateTime(2025, 3, 1, 12, 0, 0);
+            var from2 = new DateTime(2025, 5, 2, 12, 0, 0);
+
+            _company.SellPolicy("1", from1, 2, new List<Risk>());
+            _company.SellPolicy("1", from2, 2, new List<Risk>());
+
+            IPolicy policy2 = _company.GetPolicy("1", from1);
+            IPolicy policy1 = _company.GetPolicy("1", from2);
+
+            policy1.NameOfInsuredObject.Should().Be(policy2.NameOfInsuredObject);
         }
 
         [Theory]
@@ -60,14 +76,55 @@ namespace InsuranceProviderTests
                 .ShouldThrow<TimeNotValidException>();
         }
 
+        [Fact]
+        public void AddRisk_ShouldAddRiskToPolicy()
+        {
+            var date = new DateTime(2025, 2, 1, 12, 0, 0);
+            var policy = _company.GetPolicy("obj2", date);
+
+            policy.InsuredRisks.Count.Should().Be(0);
+
+            _company.AddRisk("obj2", new Risk("Theft", 10M), date.AddMonths(5));
+
+            policy.InsuredRisks.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void AddRisk_Retroactive_ShouldThrowTimeNotValidException()
+        {
+            _company.Invoking(c => c.AddRisk("obj2", new Risk("Theft", 10M), DateTime.Now))
+                .ShouldThrow<TimeNotValidException>();
+        }
+
+        [Fact]
+        public void GetPolicy_ShouldReturnPolicy()
+        {
+            IPolicy policy = _company.GetPolicy("obj1", new DateTime(2020, 2, 1, 12, 0, 0));
+
+            policy.Should().NotBeNull();
+            policy.NameOfInsuredObject.Should().Be("obj1");
+        }
+
+        [Fact]
+        public void GetPolicy_NotFound_ShouldThrowException()
+        {
+            _company.Invoking(c => c.GetPolicy("policy", DateTime.Now))
+                .ShouldThrow<PolicyNotFoundException>();
+        }
+
+
+
         private List<IPolicy> GetPolicies()
         {
-            var date = new DateTime(2020, 5, 1, 12, 0, 0);
+            var from = new DateTime(2020, 2, 1, 12, 0, 0);
+            var till = new DateTime(2020, 5, 1, 12, 0, 0);
 
             return new List<IPolicy>()
             {
-                new Policy("obj1", date.AddMonths(-3),
-                    date, 1M, new List<Risk>())
+                new Policy("obj1", from,
+                    till, 1M, new List<Risk>()),
+                new Policy("obj2", from.AddYears(5),
+                    till, 1M, new List<Risk>())
             };
         }
     }
