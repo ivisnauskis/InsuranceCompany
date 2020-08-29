@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using InsuranceProvider;
+using InsuranceProvider.Interfaces;
 using Xunit;
 
 namespace InsuranceProviderTests
@@ -13,10 +14,14 @@ namespace InsuranceProviderTests
         public PolicyTests()
         {
             var from = new DateTime(2025, 1, 1, 12, 0, 0);
-            var till = new DateTime(2026, 1, 1, 12, 0, 0);
-            var risks = new List<Risk> { new Risk("1", 5M), new Risk("2", 6M) };
+            var till = from.AddMonths(6);
+            var risks = new List<RiskData>
+            {
+                new RiskData(new Risk("1", 5M), from, till, 15M),
+                new RiskData(new Risk("2", 6M), from, till, 25M)
+            };
 
-            _policy = new Policy("obj", from, till, 10M, risks);
+            _policy = new Policy("obj", from, till, risks);
         }
 
         [Fact]
@@ -34,13 +39,13 @@ namespace InsuranceProviderTests
         [Fact]
         public void ValidTill()
         {
-            _policy.ValidTill.Should().Be(new DateTime(2026, 1, 1, 12, 0, 0));
+            _policy.ValidTill.Should().Be(new DateTime(2025, 7, 1, 12, 0, 0));
         }
 
         [Fact]
         public void GetPremium()
         {
-            _policy.Premium.Should().Be(10M);
+            _policy.Premium.Should().Be(40);
         }
 
         [Fact]
